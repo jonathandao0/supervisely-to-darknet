@@ -84,7 +84,7 @@ def convert_supervisely_json(read_path, new_data_name, meta_file, split_shuffle,
     # Get all file real paths
     read_path = read_path + os.sep
     ann_paths = sorted(glob.glob(read_path + 'ann/' + '*.json'))
-    img_paths = sorted(glob.glob(read_path + 'img/' + '*.jpg'))
+    img_paths = sorted(glob.glob(read_path + 'img/' + '*.[jp][np]g'))
 
     # Import all json annotation files for images
     for (ann_path, img_path) in tqdm(zip(ann_paths, img_paths), desc='Annotations'):
@@ -110,8 +110,11 @@ def convert_supervisely_json(read_path, new_data_name, meta_file, split_shuffle,
                 b_width = (corner_coords[1][0] - corner_coords[0][0]) / image_size['width']
                 b_height = (corner_coords[1][1] - corner_coords[0][1]) / image_size['height']
 
+                b_width = 0 if (b_width < 0.) else b_width
+                b_height = 0 if (b_height < 0.) else b_height
+
                 # Write labels file
-                if (b_width > 0.) and (b_height > 0.):
+                if (b_width >= 0.) and (b_height >= 0.):
                     with open(out_path + 'labels/' + label_name, 'a') as label_f:
                         label_f.write('%d %.6f %.6f %.6f %.6f\n' % (class_index, b_x_center, b_y_center, b_width, b_height))
         
@@ -119,7 +122,7 @@ def convert_supervisely_json(read_path, new_data_name, meta_file, split_shuffle,
             shutil.copy(img_path, out_path + 'images/')
     
     # Split training set
-    img_paths = sorted(glob.glob(out_path + 'images/' + '*.jpg'))
+    img_paths = sorted(glob.glob(out_path + 'images/' + '*.[jp][np]g'))
     sets_paths = split_paths(new_data_name, img_paths, split_shuffle, train_size, val_size)
 
     # Write .data file
